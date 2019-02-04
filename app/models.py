@@ -85,8 +85,8 @@ class Booking(db.Model):
 
 
 class BookingFacility(db.Model):
-    booking_id = db.Column(db.Integer, db.ForeignKey('booking.id'))
-    facility_id = db.Column(db.Integer, db.ForeignKey('facility.id'))
+    booking_id = db.Column(db.Integer, db.ForeignKey('booking.id'), primary_key=True)
+    facility_id = db.Column(db.Integer, db.ForeignKey('facility.id'), primary_key=True)
     created = db.Column(db.DateTime, default=datetime.utcnow)
     updated = db.Column(db.DateTime, default=datetime.utcnow)
 
