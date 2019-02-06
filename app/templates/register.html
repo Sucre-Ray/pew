@@ -32,7 +32,12 @@
             <span style="color: red;">[{{ error }}]</span>
             {% endfor %}
         </p>
-        <p>{{ form.accept_policy() }} {{ form.accept_policy.label }}</p>
+        <p>
+            {{ form.accept_policy() }} {{ form.accept_policy.label }}
+            {% for error in form.accept_policy.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
         <p>{{ form.submit() }}</p>
     </form>
 {% endblock %}
