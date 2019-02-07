@@ -53,7 +53,7 @@ def logout():
 
 
 @app.route('/user/<id>')
-#@login_required
+@login_required
 def user(id):
     user = User.query.filter_by(id=id).first_or_404()
     return render_template('user.html', user=user)
