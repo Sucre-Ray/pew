@@ -5,6 +5,7 @@ from flask import render_template, flash, redirect, url_for, request
 from flask_login import login_user, logout_user, login_required, current_user
 from app.forms import RegisterForm, LoginForm, ResetPasswordForm, ResetPasswordRequestForm
 from app.models import User
+from app.mail import send_password_reset_email
 
 
 @login_required
@@ -58,9 +59,14 @@ def user(id):
     user = User.query.filter_by(id=id).first_or_404()
     return render_template('user.html', user=user)
 
+
 @app.route('/reset_password_confirm')
 def reset_password_confirm():
     return render_template('reset_password_confirm.html')
+
+@app.route('/email_confirm')
+def email_confirm():
+    return render_template('email_confirm.html')
 
 
 @app.route('/reset_password_request', methods=['GET', 'POST'])
@@ -69,10 +75,9 @@ def reset_password_request():
         return redirect(url_for('index'))
     form = ResetPasswordRequestForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data)
+        user = User.query.filter_by(email=form.email.data).first()
         if user:
-            pass
-            # send_password_reset_email(user)
+            send_password_reset_email(user)
         return redirect(url_for('reset_password_confirm'))
     return render_template('reset_password_request.html',
                            title='Reset Password',
