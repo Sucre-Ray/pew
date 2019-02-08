@@ -1,8 +1,10 @@
 from app import app, db, login
 from datetime import datetime
+from time import time
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from hashlib import md5
+import jwt
 
 
 class User(UserMixin, db.Model):
@@ -12,6 +14,7 @@ class User(UserMixin, db.Model):
     surname = db.Column(db.String(100))
     birth_date = db.Column(db.Date)
     bio = db.Column(db.String(300))
+    status = db.Column(db.String(20))
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
     email = db.Column(db.String(120), index=True, unique=True)
     password_hash = db.Column(db.String(128))
@@ -20,6 +23,15 @@ class User(UserMixin, db.Model):
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
+
+    def activate(self):
+        self.status = 'Active'
+
+    def deactivate(self):
+        self.status = 'Deactivated'
+
+    def is_active(self):
+        return self.status == 'Active'
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
@@ -31,6 +43,20 @@ class User(UserMixin, db.Model):
         digest = md5(self.email.lower().encode('utf-8')).hexdigest()
         return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(
             digest, size)
+
+    def get_user_id_token(self, expires_in=600):
+        return jwt.encode(
+            {'user_id': self.id, 'exp': time() + expires_in},
+            app.config['SECRET_KEY'], algorithm='HS256').decode('utf-8')
+
+    @staticmethod
+    def verify_user_id_token(token):
+        try:
+            id = jwt.decode(token, app.config['SECRET_KEY'],
+                            algorithms=['HS256'])['user_id']
+        except:
+            return
+        return User.query.get(id)
 
 
 @login.user_loader
@@ -79,6 +105,8 @@ class Booking(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     booking_start = db.Column(db.Date)
     booking_end = db.Column(db.Date)
+    # TODO: add status
+    # status = db.Column(db.String(100), index=True)
     created = db.Column(db.DateTime, default=datetime.utcnow)
     updated = db.Column(db.DateTime, default=datetime.utcnow)
 
