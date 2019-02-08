@@ -20,9 +20,10 @@ def login():
         return redirect(url_for('index'))
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data,
-                                    status='Active').first()
-        if user is None or not user.check_password(form.password.data):
+        user = User.query.filter_by(email=form.email.data).first()
+        if user is None \
+                or (not user.check_password(form.password.data)) \
+                or (not user.is_active()):
             flash('Invalid email or password, '
                   'or user haven\'t been activated.')
             return redirect(url_for('login'))
@@ -52,7 +53,7 @@ def register():
         db.session.add(user)
         db.session.commit()
         send_email_activate_email(user)
-        return redirect(url_for('email_confirm'))
+        return redirect(url_for('register_email_confirm'))
     return render_template('register.html', title='Register', form=form)
 
 @app.route('/logout')
@@ -76,6 +77,7 @@ def reset_password_confirm():
 def register_email_confirm():
     return render_template('register_email_confirm.html')
 
+
 @app.route('/email_confirm/<token>')
 def email_confirm(token):
     if current_user.is_authenticated:
@@ -86,6 +88,7 @@ def email_confirm(token):
     if not user.is_active():
         user.activate()
         db.session.commit()
+        flash('Your account successfully activated.')
     # As a possibility to do login user from token
     # login_user(user)
     return redirect(url_for('login'))
