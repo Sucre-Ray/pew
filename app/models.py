@@ -24,6 +24,15 @@ class User(UserMixin, db.Model):
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
+    def activate(self):
+        self.status = 'Active'
+
+    def deactivate(self):
+        self.status = 'Deactivated'
+
+    def is_active(self):
+        return self.status == 'Active'
+
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
@@ -35,16 +44,16 @@ class User(UserMixin, db.Model):
         return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(
             digest, size)
 
-    def get_reset_password_token(self, expires_in=600):
+    def get_user_id_token(self, expires_in=600):
         return jwt.encode(
-            {'reset_password': self.id, 'exp': time() + expires_in},
+            {'user_id': self.id, 'exp': time() + expires_in},
             app.config['SECRET_KEY'], algorithm='HS256').decode('utf-8')
 
     @staticmethod
-    def verify_reset_password_token(token):
+    def verify_user_id_token(token):
         try:
             id = jwt.decode(token, app.config['SECRET_KEY'],
-                            algorithms=['HS256'])['reset_password']
+                            algorithms=['HS256'])['user_id']
         except:
             return
         return User.query.get(id)

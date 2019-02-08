@@ -1,0 +1,11 @@
+Dear {{ user.name }},
+
+To activate your account click on the following link:
+
+{{ url_for('email_confirm', token=token, _external=True) }}
+
+If you have not registered on below site simply ignore this message.
+
+Sincerely,
+
+The Pew! Team
