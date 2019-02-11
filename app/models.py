@@ -1,5 +1,5 @@
 from app import app, db, login
-from datetime import datetime
+from datetime import datetime, date
 from time import time
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
@@ -58,6 +58,10 @@ class User(UserMixin, db.Model):
             return
         return User.query.get(id)
 
+    def get_user_bookings(self):
+        return Booking.query.filter_by(user_id=self.id).\
+            order_by(Booking.booking_start.desc()).all()
+
 
 @login.user_loader
 def load_user(id):
@@ -72,6 +76,7 @@ class Place(db.Model):
     right_coordinate = db.Column(db.Integer)
     floor = db.Column(db.Integer)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
+    bookings = db.relationship('Booking', backref=db.backref('place', lazy=True))
 
     def __repr__(self):
         return '<Place {}>'.format(self.id)
@@ -86,7 +91,7 @@ class Category(db.Model):
                                       backref=db.backref('category', lazy=True))
 
     def __repr__(self):
-        return '<Category {}>'.format(self.categoryname)
+        return '<Category {}>'.format(self.category_name)
 
 
 class Facility(db.Model):
@@ -105,22 +110,37 @@ class Booking(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     booking_start = db.Column(db.Date)
     booking_end = db.Column(db.Date)
-    # TODO: add status
-    # status = db.Column(db.String(100), index=True)
+    internal_booking_status = db.Column(db.String(100), default='Booked', index=True)
     created = db.Column(db.DateTime, default=datetime.utcnow)
-    updated = db.Column(db.DateTime, default=datetime.utcnow)
+    updated = db.Column(db.DateTime)
+    facilities = db.relationship('BookingFacility',
+                                 backref=db.backref('booking', lazy=True))
 
     def __repr__(self):
         return '<Booking id:{};place:{};user:{}>'.format(self.id,
                                                          self.place_id,
                                                          self.user_id)
 
+    def get_status(self):
+        if self.booking_end < date.today() and self.internal_booking_status == 'Booked':
+            return 'Closed'
+        elif self.booking_end >= date.today() >= self.booking_start \
+                and self.internal_booking_status == 'Booked':
+            return 'In progress'
+        elif self.booking_start > date.today():
+            return 'New'
+        elif self.internal_booking_status == 'Cancelled':
+            return self.internal_booking_status
+
+    def get_place_price(self):
+        return Booking.query.filter_by(id=self.id).first().place.category.price
+
 
 class BookingFacility(db.Model):
     booking_id = db.Column(db.Integer, db.ForeignKey('booking.id'), primary_key=True)
     facility_id = db.Column(db.Integer, db.ForeignKey('facility.id'), primary_key=True)
     created = db.Column(db.DateTime, default=datetime.utcnow)
-    updated = db.Column(db.DateTime, default=datetime.utcnow)
+    updated = db.Column(db.DateTime)
 
     def __repr__(self):
         return '<Facility {}>'.format(self.name)

@@ -1,5 +1,96 @@
 {% extends "base.html" %}
 
+{% block css %}
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+{% endblock %}
+
+{% block scripts %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+{% endblock %}
+
+
 {% block content %}
 <h1>Profile Page</h1>
+<table>
+        <tr valign="top">
+            <td>
+                <img src="{{ user.avatar(128) }}">
+                {% if user == current_user %}
+                <div><a href="{{ url_for('edit_profile') }}">Edit</a></div>
+                {% endif %}
+            </td>
+            <td>
+                <div class="container">
+                  <ul class="nav nav-tabs">
+                    <li class="active"><a data-toggle="tab" href="#overview">Overview</a></li>
+                    <li><a data-toggle="tab" href="#bookings">My Bookings</a></li>
+                    <li><a data-toggle="tab" href="#settings">Settings</a></li>
+                  </ul>
+                    <div class="tab-content">
+                        <div id="overview" class="tab-pane fade in active">
+                            <h3>Hi, {{ user.name }}</h3>
+                            {% if user.bio %}
+                            <p>{{ user.bio }}</p>
+                            {% endif %}
+                        </div>
+                        <div id="bookings" class="tab-pane fade">
+                            <h3>Here you can check your booking information.</h3>
+                            {% if user.get_user_bookings() %}
+                            <table>
+                                <tr>
+                                    <th>
+                                        <p>Place</p>
+                                    </th>
+                                    <th>
+                                        <p>Start date</p>
+                                    </th>
+                                    <th>
+                                        <p>End date</p>
+                                    </th>
+                                    <th>
+                                        <p>Status</p>
+                                    </th>
+                                    <th>
+                                        <p>Price</p>
+                                    </th>
+                                </tr>
+                                {% for booking in user.get_user_bookings() %}
+                                <tr>
+                                    <td>
+                                        <p>{{booking.place_id}}</p>
+                                    </td>
+                                    <td>
+                                        <p>{{booking.booking_start}}</p>
+                                    </td>
+                                    <td>
+                                        <p>{{booking.booking_end}}</p>
+                                    </td>
+                                    <td>
+                                        <p>{{booking.get_status()}}</p>
+                                    </td>
+                                    <td>
+                                        <p>{{booking.get_place_price()}}</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                            {% else %}
+                            <p>
+                                You have not booked yet.
+                            </p>
+                            {% endif %}
+                        </div>
+                        <div id="settings" class="tab-pane fade">
+                            <p>Enable integration with Google Calendar</p>
+                            <br>
+                            <h4>Email notification</h4>
+                            <p>Notifications about bookings</p>
+                            <p>Random news</p>
+                        </div>
+                      </div>
+                </div>
+            </td>
+        </tr>
+    </table>
 {% endblock %}
