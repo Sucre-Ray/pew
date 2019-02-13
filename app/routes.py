@@ -3,7 +3,8 @@ from werkzeug.urls import url_parse
 from app import app, db
 from flask import render_template, flash, redirect, url_for, request
 from flask_login import login_user, logout_user, login_required, current_user
-from app.forms import RegisterForm, LoginForm, ResetPasswordForm, ResetPasswordRequestForm
+from app.forms import RegisterForm, LoginForm, ResetPasswordForm, \
+    ResetPasswordRequestForm, EditProfileForm, ChangePasswordForm
 from app.models import User
 from app.mail import send_password_reset_email, send_email_activate_email
 
@@ -40,13 +41,14 @@ def activate_user(token):
     if current_user.is_authenticated:
         return redirect(url_for('index'))
 
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     form = RegisterForm()
     if form.validate_on_submit():
-        user = User(username=form.username.data,
+        user = User(name=form.name.data,
                     email=form.email.data,
                     status='Registered')
         user.set_password(form.password.data)
@@ -55,6 +57,7 @@ def register():
         send_email_activate_email(user)
         return redirect(url_for('register_email_confirm'))
     return render_template('register.html', title='Register', form=form)
+
 
 @app.route('/logout')
 def logout():
@@ -72,6 +75,7 @@ def user(id):
 @app.route('/reset_password_confirm')
 def reset_password_confirm():
     return render_template('reset_password_confirm.html')
+
 
 @app.route('/register_email_confirm')
 def register_email_confirm():
@@ -124,3 +128,32 @@ def reset_password(token):
         return redirect(url_for('login'))
     return render_template('reset_password.html', form=form)
 
+
+@login_required
+@app.route('/edit_profile', methods=['GET', 'POST'])
+def edit_profile():
+    profile_form = EditProfileForm()
+    password_form = ChangePasswordForm()
+    if profile_form.validate_on_submit():
+        current_user.name = profile_form.name.data
+        current_user.bio = profile_form.bio.data
+        db.session.commit()
+        flash('Your changes have been saved.')
+        return redirect(url_for('edit_profile'))
+    elif request.method == 'GET':
+        profile_form.name.data = current_user.name
+        profile_form.bio.data = current_user.bio
+    elif password_form.validate_on_submit():
+        # user = User.query.filter_by(email=current_user.email).first()
+        if not current_user.check_password(password_form.old_password.data):
+            flash('Old password is incorrect.')
+            return redirect(url_for('edit_profile'))
+        current_user.set_password(password_form.new_password.data)
+        db.session.commit()
+        flash('Your password successfully changed.')
+        return redirect(url_for('edit_profile'))
+    return render_template('edit_profile.html',
+                           title='Edit Profile',
+                           profile_form=profile_form,
+                           password_form=password_form,
+                           user=current_user)
