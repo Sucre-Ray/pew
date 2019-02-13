@@ -1,6 +1,6 @@
 from app import app, db
 
-from app.models import User, Place, Booking, Facility, BookingFacility, Category
+from app.models import User, Place, Booking, Facility, BookingFacility, Category, MapPoint
 
 
 @app.shell_context_processor
@@ -11,4 +11,5 @@ def make_shell_context():
             'Booking': Booking,
             'Facility': Facility,
             'BookingFacility': BookingFacility,
-            'Category': Category}
+            'Category': Category,
+            'MapPoint': MapPoint}

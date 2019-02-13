@@ -1,15 +1,16 @@
 from app import app, db, login
-from datetime import datetime
+from datetime import datetime, date
 from time import time
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from hashlib import md5
+from sqlalchemy import func, distinct
 import jwt
 
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(64), index=True, unique=True)
+    username = db.Column(db.String(64))
     name = db.Column(db.String(100))
     surname = db.Column(db.String(100))
     birth_date = db.Column(db.Date)
@@ -58,6 +59,10 @@ class User(UserMixin, db.Model):
             return
         return User.query.get(id)
 
+    def get_user_bookings(self):
+        return Booking.query.filter_by(user_id=self.id). \
+            order_by(Booking.booking_date.desc()).all()
+
 
 @login.user_loader
 def load_user(id):
@@ -66,15 +71,35 @@ def load_user(id):
 
 class Place(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    top_coordinate = db.Column(db.Integer)
-    down_coordinate = db.Column(db.Integer)
-    left_coordinate = db.Column(db.Integer)
-    right_coordinate = db.Column(db.Integer)
-    floor = db.Column(db.Integer)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
+    bookings = db.relationship('Booking', backref=db.backref('place', lazy=True))
+    map_points = db.relationship('MapPoint', backref=db.backref('place', lazy=True))
 
     def __repr__(self):
         return '<Place {}>'.format(self.id)
+
+    def get_place_height(self):
+        return db.session.query(func.count(distinct(MapPoint.y_coordinate))).\
+            filter(MapPoint.place_id == self.id).first()[0]
+
+    def get_place_width(self):
+        return db.session.query(func.count(distinct(MapPoint.x_coordinate))).\
+            filter(MapPoint.place_id == self.id).first()[0]
+
+    def is_booked_on_date(self, book_date):
+        return Booking.query.filter_by(place_id=self.id).\
+            filter_by(booking_date=book_date).count() == 1
+
+
+class MapPoint(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    x_coordinate = db.Column(db.Integer)
+    y_coordinate = db.Column(db.Integer)
+    place_id = db.Column(db.Integer, db.ForeignKey('place.id'))
+    __table_args__ = (db.UniqueConstraint('x_coordinate', 'y_coordinate', name='_x_y_uc'),)
+
+    def __repr__(self):
+        return '<Point x:{} y:{}>'.format(self.x_coordinate, self.y_coordinate)
 
 
 class Category(db.Model):
@@ -86,7 +111,7 @@ class Category(db.Model):
                                       backref=db.backref('category', lazy=True))
 
     def __repr__(self):
-        return '<Category {}>'.format(self.categoryname)
+        return '<Category {}>'.format(self.category_name)
 
 
 class Facility(db.Model):
@@ -103,24 +128,39 @@ class Booking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     place_id = db.Column(db.Integer, db.ForeignKey('place.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    booking_start = db.Column(db.Date)
-    booking_end = db.Column(db.Date)
-    # TODO: add status
-    # status = db.Column(db.String(100), index=True)
+    # booking_start = db.Column(db.Date)
+    # booking_end = db.Column(db.Date)
+    booking_date = db.Column(db.Date)
+    internal_booking_status = db.Column(db.String(100), default='Booked', index=True)
     created = db.Column(db.DateTime, default=datetime.utcnow)
-    updated = db.Column(db.DateTime, default=datetime.utcnow)
+    updated = db.Column(db.DateTime)
+    facilities = db.relationship('BookingFacility',
+                                 backref=db.backref('booking', lazy=True))
 
     def __repr__(self):
         return '<Booking id:{};place:{};user:{}>'.format(self.id,
                                                          self.place_id,
                                                          self.user_id)
 
+    def get_status(self):
+        if self.booking_date < date.today() and self.internal_booking_status == 'Booked':
+            return 'Closed'
+        elif self.booking_date == date.today() and self.internal_booking_status == 'Booked':
+            return 'In progress'
+        elif self.booking_date > date.today() and self.internal_booking_status == 'Booked':
+            return 'New'
+        elif self.internal_booking_status == 'Cancelled':
+            return 'Cancelled'
+
+    def get_place_price(self):
+        return Booking.query.filter_by(id=self.id).first().place.category.price
+
 
 class BookingFacility(db.Model):
     booking_id = db.Column(db.Integer, db.ForeignKey('booking.id'), primary_key=True)
     facility_id = db.Column(db.Integer, db.ForeignKey('facility.id'), primary_key=True)
     created = db.Column(db.DateTime, default=datetime.utcnow)
-    updated = db.Column(db.DateTime, default=datetime.utcnow)
+    updated = db.Column(db.DateTime)
 
     def __repr__(self):
         return '<Facility {}>'.format(self.name)
