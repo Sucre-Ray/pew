@@ -79,16 +79,17 @@ class Place(db.Model):
         return '<Place {}>'.format(self.id)
 
     def get_place_height(self):
-        return db.session.query(func.count(distinct(MapPoint.y_coordinate))).\
-            filter(MapPoint.place_id == self.id).first()[0]
+        return db.session.query(func.count(distinct(MapPoint.y_coordinate))). \
+            filter(MapPoint.place_id == self.id).scalar()
 
     def get_place_width(self):
-        return db.session.query(func.count(distinct(MapPoint.x_coordinate))).\
-            filter(MapPoint.place_id == self.id).first()[0]
+        return db.session.query(func.count(distinct(MapPoint.x_coordinate))). \
+            filter(MapPoint.place_id == self.id).scalar()
 
     def is_booked_on_date(self, book_date):
-        return Booking.query.filter_by(place_id=self.id).\
-            filter_by(booking_date=book_date).count() == 1
+        return Booking.query.filter_by(place_id=self.id). \
+                   filter_by(booking_date=book_date). \
+                   filter_by(internal_booking_status='Booked').count() == 1
 
 
 class MapPoint(db.Model):
@@ -100,6 +101,12 @@ class MapPoint(db.Model):
 
     def __repr__(self):
         return '<Point x:{} y:{}>'.format(self.x_coordinate, self.y_coordinate)
+
+    # def get_min_x(self):
+    #     return db.session.query(func.min(MapPoint.x_coordinate)).scalar()
+    #
+    # def get_row_by_y(self, y):
+    #     return db.session.query().filter(MapPoint.y_coordinate == y).all()
 
 
 class Category(db.Model):
@@ -151,6 +158,19 @@ class Booking(db.Model):
             return 'New'
         elif self.internal_booking_status == 'Cancelled':
             return 'Cancelled'
+
+    def is_new_booking(self):
+        return self.get_status() == 'New'
+
+    @staticmethod
+    def cancel(id):
+        booking = Booking.query.get(int(id))
+        if booking.is_new_booking():
+            booking.internal_booking_status = 'Cancelled'
+            db.session.add(booking)
+            db.session.commit()
+            return 'Booking cancelled'
+        return 'You can\'t cancel this booking'
 
     def get_place_price(self):
         return Booking.query.filter_by(id=self.id).first().place.category.price
