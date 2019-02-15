@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+
+{% block content %}
+<p>
+    Booking of spot {{booking.place_id}} on {{booking.booking_date}} is successful.<br>
+    You can view and manage your bookings at <a href="{{url_for('user',id=current_user.id)}}">Profile Page</a>.
+</p>
+{% endblock %}

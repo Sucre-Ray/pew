@@ -3,13 +3,48 @@
 {% block content %}
 <p>Welcome to Blazing Booking - online service which helps you
     to find and book workspace at Geeky Galaxy Center Inc.</p>
-<div>
-Map
+<form action="" method="post">
+                    {{ form.hidden_tag() }}
+                    <p>{{ form.date.label }}<br>
+                        <input type="date" name="date" />
+                        {% for error in form.date.errors %}
+                        <span style="color: red;">[{{ error }}]</span>
+                        {% endfor %}
+                    </p>
+                    <p>{{ form.submit() }}</p>
+</form>
+
+<div class="place map">
+    {% if points %}
+    <table>
+        {% for key, row in points.items() %}
+        <tr>
+            {% for point in row %}
+            <td>
+                {% if point.place_id %}
+                <img src="/static/table.png" alt="table" height="100" width="100">
+                <!-- TODO: optimize this query -->
+                {% if point.place.is_booked_on_date(form.date.data) %}
+                <div><p>This place is booked</p></div>
+                {% else %}
+                <div><a href="{{url_for('book',place=point.place_id, book_date=form.date.data)}}">Book</a></div>
+                {% endif %}
+                {% else %}
+                <img src="/static/hall.png" alt="hall" height="100" width="100">
+                {% endif %}
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
 </div>
+{%if not current_user.is_authenticated %}
 <div>
     <p>
     <a href="{{ url_for('login') }}">Sign In</a>
      to book your favourite spot at Geeky Galaxy Center Inc.
     </p>
 </div>
+{% endif%}
 {% endblock %}

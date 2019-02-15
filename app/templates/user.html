@@ -7,6 +7,19 @@
 {% block scripts %}
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+<script>
+        function cancel_booking(sourceElem,newStatusElem, destElem) {
+            $(destElem).html('<img src="{{ url_for('static', filename='loading.gif') }}">');
+            $.post('/cancel_booking', {
+                id: $(sourceElem).text()
+            }).done(function(response) {
+                $(destElem).html(response["text"]);
+                $(newStatusElem).html(response["booking_status"]);
+            }).fail(function() {
+                $(destElem).text("Error occured while communicating server.");
+            });
+        }
+</script>
 {% endblock %}
 
 
@@ -43,10 +56,7 @@
                                         <p>Place</p>
                                     </th>
                                     <th>
-                                        <p>Start date</p>
-                                    </th>
-                                    <th>
-                                        <p>End date</p>
+                                        <p>Booking date</p>
                                     </th>
                                     <th>
                                         <p>Status</p>
@@ -61,17 +71,26 @@
                                         <p>{{booking.place_id}}</p>
                                     </td>
                                     <td>
-                                        <p>{{booking.booking_start}}</p>
+                                        <p>{{booking.booking_date}}</p>
                                     </td>
                                     <td>
-                                        <p>{{booking.booking_end}}</p>
-                                    </td>
-                                    <td>
-                                        <p>{{booking.get_status()}}</p>
+                                        <p id="booking_status{{booking.id}}">{{booking.get_status()}}</p>
                                     </td>
                                     <td>
                                         <p>{{booking.get_place_price()}}</p>
                                     </td>
+                                    {%if booking.is_new_booking() %}
+                                    <td>
+                                        <p>
+                                            <span id="booking{{ booking.id }}" hidden>{{ booking.id }}</span>
+                                            <span id="cancel{{ booking.id }}">
+                                                <a href="javascript:cancel_booking('#booking{{booking.id}}',
+                                                '#booking_status{{booking.id}}',
+                                                '#cancel{{booking.id}}');">Cancel</a>
+                                            </span>
+                                        </p>
+                                    </td>
+                                    {% endif %}
                                 </tr>
                                 {% endfor %}
                             </table>
