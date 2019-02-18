@@ -71,6 +71,14 @@ def load_user(id):
     return User.query.get(int(id))
 
 
+class Setting(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    setting = db.Column(db.String(200))
+    description = db.Column(db.String(1000))
+    status = db.Column(db.String(100))
+    created = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 class Place(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
