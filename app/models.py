@@ -1,4 +1,5 @@
-from app import app, db, login
+from app import db, login
+from flask import current_app
 from datetime import datetime, date
 from time import time
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -15,7 +16,7 @@ class User(UserMixin, db.Model):
     surname = db.Column(db.String(100))
     birth_date = db.Column(db.Date)
     bio = db.Column(db.String(300))
-    status = db.Column(db.String(20))
+    status = db.Column(db.String(20), default='Registered')
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
     email = db.Column(db.String(120), index=True, unique=True)
     password_hash = db.Column(db.String(128))
@@ -48,13 +49,14 @@ class User(UserMixin, db.Model):
     def get_user_id_token(self, expires_in=600):
         return jwt.encode(
             {'user_id': self.id, 'exp': time() + expires_in},
-            app.config['SECRET_KEY'], algorithm='HS256').decode('utf-8')
+            current_app.config['SECRET_KEY'], algorithm='HS256').decode('utf-8')
 
     @staticmethod
     def verify_user_id_token(token):
         try:
-            id = jwt.decode(token, app.config['SECRET_KEY'],
+            id = jwt.decode(token, current_app.config['SECRET_KEY'],
                             algorithms=['HS256'])['user_id']
+        # TODO: add checking of token expiration.
         except:
             return
         return User.query.get(id)
@@ -102,12 +104,6 @@ class MapPoint(db.Model):
     def __repr__(self):
         return '<Point x:{} y:{}>'.format(self.x_coordinate, self.y_coordinate)
 
-    # def get_min_x(self):
-    #     return db.session.query(func.min(MapPoint.x_coordinate)).scalar()
-    #
-    # def get_row_by_y(self, y):
-    #     return db.session.query().filter(MapPoint.y_coordinate == y).all()
-
 
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -135,8 +131,6 @@ class Booking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     place_id = db.Column(db.Integer, db.ForeignKey('place.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    # booking_start = db.Column(db.Date)
-    # booking_end = db.Column(db.Date)
     booking_date = db.Column(db.Date)
     internal_booking_status = db.Column(db.String(100), default='Booked', index=True)
     created = db.Column(db.DateTime, default=datetime.utcnow)

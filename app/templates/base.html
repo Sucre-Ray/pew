@@ -13,13 +13,13 @@
         {% endblock %}
     </head>
     <body>
-        <div><a href="{{ url_for('index') }}">Home</a></div>
+        <div><a href="{{ url_for('booking.index') }}">Home</a></div>
         {% if current_user.is_anonymous %}
-        <div><a href="{{ url_for('register') }}">Register</a></div>
-        <div><a href="{{ url_for('login') }}">Login</a></div>
+        <div><a href="{{ url_for('auth.register') }}">Register</a></div>
+        <div><a href="{{ url_for('auth.login') }}">Login</a></div>
         {% else %}
-        <div><a href="{{ url_for('user', id=current_user.id) }}">Profile</a></div>
-        <div><a href="{{ url_for('logout') }}">Logout</a></div>
+        <div><a href="{{ url_for('user.user', id=current_user.id) }}">Profile</a></div>
+        <div><a href="{{ url_for('auth.logout') }}">Logout</a></div>
         {% endif %}
         <hr>
         {% with messages = get_flashed_messages() %}

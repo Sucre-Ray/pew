@@ -1,6 +1,7 @@
-from app import app, db
-
+from app import create_app, db
 from app.models import User, Place, Booking, Facility, BookingFacility, Category, MapPoint
+
+app = create_app()
 
 
 @app.shell_context_processor

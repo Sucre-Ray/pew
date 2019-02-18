@@ -1,12 +1,12 @@
 <p>Dear {{ user.name }},</p>
 <p>
     To activate your account
-    <a href="{{ url_for('email_confirm', token=token, _external=True) }}">
+    <a href="{{ url_for('auth.email_confirm', token=token, _external=True) }}">
         click here
     </a>.
 </p>
 <p>Alternatively, you can paste the following link in your browser's address bar:</p>
-<p>{{ url_for('email_confirm', token=token, _external=True) }}</p>
+<p>{{ url_for('auth.email_confirm', token=token, _external=True) }}</p>
 <p>If you have not registered on below site simply ignore this message.</p>
 <p>Sincerely,</p>
 <p>The Pew! Team</p>

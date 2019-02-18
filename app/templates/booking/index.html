@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-<p>Welcome to Blazing Booking - online service which helps you
-    to find and book workspace at Geeky Galaxy Center Inc.</p>
+{% if current_user.is_authenticated %}
+<p>Select workspace at Geeky Galaxy Center Inc.</p>
 <form action="" method="post">
                     {{ form.hidden_tag() }}
                     <p>{{ form.date.label }}<br>
@@ -13,7 +13,10 @@
                     </p>
                     <p>{{ form.submit() }}</p>
 </form>
-
+{%else %}
+<p>Welcome to Blazing Booking - online service which helps you
+    to find and book workspace at Geeky Galaxy Center Inc.</p>
+{% endif %}
 <div class="place map">
     {% if points %}
     <table>
@@ -23,11 +26,13 @@
             <td>
                 {% if point.place_id %}
                 <img src="/static/table.png" alt="table" height="100" width="100">
-                <!-- TODO: optimize this query -->
-                {% if point.place.is_booked_on_date(form.date.data) %}
-                <div><p>This place is booked</p></div>
-                {% else %}
-                <div><a href="{{url_for('book',place=point.place_id, book_date=form.date.data)}}">Book</a></div>
+                {% if current_user.is_authenticated %}
+                    <!-- TODO: optimize this query -->
+                    {% if point.place.is_booked_on_date(form.date.data) %}
+                    <div><p>This place is booked</p></div>
+                    {% else %}
+                    <div><a href="{{url_for('booking.book',place=point.place_id, book_date=form.date.data)}}">Book</a></div>
+                    {% endif %}
                 {% endif %}
                 {% else %}
                 <img src="/static/hall.png" alt="hall" height="100" width="100">
@@ -39,10 +44,10 @@
     </table>
     {% endif %}
 </div>
-{%if not current_user.is_authenticated %}
+{%if current_user.is_anonymous %}
 <div>
     <p>
-    <a href="{{ url_for('login') }}">Sign In</a>
+    <a href="{{ url_for('auth.login') }}">Sign In</a>
      to book your favourite spot at Geeky Galaxy Center Inc.
     </p>
 </div>
